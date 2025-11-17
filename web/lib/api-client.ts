@@ -1,0 +1,124 @@
+import type {
+  StartInterviewRequest,
+  SubmitAnswerRequest,
+  InterviewSessionResponse,
+  AnswerResponse,
+  FeedbackResponse,
+  SessionHistoryItem,
+  HealthCheckResponse,
+  APIError,
+} from './types'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+class APIClient {
+  private baseURL: string
+
+  constructor(baseURL: string = API_BASE_URL) {
+    this.baseURL = baseURL
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`
+
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    }
+
+    try {
+      const response = await fetch(url, config)
+
+      if (!response.ok) {
+        let errorMessage = `API Error: ${response.status} ${response.statusText}`
+
+        try {
+          const errorData: APIError = await response.json()
+          errorMessage = errorData.detail || errorMessage
+        } catch {
+          // If error response is not JSON, use default message
+        }
+
+        throw new Error(errorMessage)
+      }
+
+      // Handle 204 No Content
+      if (response.status === 204) {
+        return {} as T
+      }
+
+      return await response.json()
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('An unexpected error occurred')
+    }
+  }
+
+  // Health check
+  async healthCheck(): Promise<HealthCheckResponse> {
+    return this.request<HealthCheckResponse>('/health')
+  }
+
+  // Start a new interview session
+  async startInterview(
+    data: StartInterviewRequest
+  ): Promise<InterviewSessionResponse> {
+    return this.request<InterviewSessionResponse>('/api/interviews/start', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Submit an answer and get evaluation + next question
+  async submitAnswer(
+    sessionId: string,
+    data: SubmitAnswerRequest
+  ): Promise<AnswerResponse> {
+    return this.request<AnswerResponse>(
+      `/api/interviews/${sessionId}/answer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    )
+  }
+
+  // Get comprehensive feedback for completed interview
+  async getFeedback(sessionId: string): Promise<FeedbackResponse> {
+    return this.request<FeedbackResponse>(
+      `/api/interviews/${sessionId}/feedback`
+    )
+  }
+
+  // Get all interview sessions history
+  async getHistory(): Promise<SessionHistoryItem[]> {
+    return this.request<SessionHistoryItem[]>('/api/interviews/history')
+  }
+
+  // Manually complete an interview early
+  async completeInterview(sessionId: string): Promise<{ message: string; session_id: string; questions_answered: number }> {
+    return this.request<{ message: string; session_id: string; questions_answered: number }>(
+      `/api/interviews/${sessionId}/complete`,
+      {
+        method: 'POST',
+      }
+    )
+  }
+
+  // Delete an interview session
+  async deleteSession(sessionId: string): Promise<void> {
+    return this.request<void>(`/api/interviews/${sessionId}`, {
+      method: 'DELETE',
+    })
+  }
+}
+
+export const apiClient = new APIClient()
