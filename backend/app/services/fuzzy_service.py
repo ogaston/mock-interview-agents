@@ -125,22 +125,34 @@ class FuzzyEvaluationService:
         clarity_sim = ctrl.ControlSystemSimulation(self.clarity_system)
         clarity_sim.input['coherence'] = normalized['coherence']
         clarity_sim.input['filler_ratio'] = normalized['filler_ratio']
-        clarity_sim.compute()
-        clarity = float(clarity_sim.output['clarity_score'])
+        try:
+            clarity_sim.compute()
+            clarity = float(clarity_sim.output['clarity_score'])
+        except (KeyError, AssertionError):
+            # Fallback if fuzzy inference fails (edge case inputs)
+            clarity = 5.0  # Default to middle score
 
         # Calculate confidence score
         confidence_sim = ctrl.ControlSystemSimulation(self.confidence_system)
         confidence_sim.input['confidence_level'] = normalized['confidence_level']
         confidence_sim.input['word_count'] = normalized['word_count']
-        confidence_sim.compute()
-        confidence = float(confidence_sim.output['confidence_score'])
+        try:
+            confidence_sim.compute()
+            confidence = float(confidence_sim.output['confidence_score'])
+        except (KeyError, AssertionError):
+            # Fallback if fuzzy inference fails (edge case inputs)
+            confidence = 5.0  # Default to middle score
 
         # Calculate relevance score
         relevance_sim = ctrl.ControlSystemSimulation(self.relevance_system)
         relevance_sim.input['technical_depth'] = normalized['technical_depth']
         relevance_sim.input['complexity'] = normalized['complexity']
-        relevance_sim.compute()
-        relevance = float(relevance_sim.output['relevance_score'])
+        try:
+            relevance_sim.compute()
+            relevance = float(relevance_sim.output['relevance_score'])
+        except (KeyError, AssertionError):
+            # Fallback if fuzzy inference fails (edge case inputs)
+            relevance = 5.0  # Default to middle score
 
         # Calculate overall score (weighted average)
         overall = (clarity * 0.3) + (confidence * 0.3) + (relevance * 0.4)

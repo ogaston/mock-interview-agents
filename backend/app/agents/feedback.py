@@ -30,6 +30,13 @@ class FeedbackAgent:
                 api_key=config["api_key"],
                 temperature=0.7
             )
+        elif config["provider"] == "google":
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            return ChatGoogleGenerativeAI(
+                model=config["model"],
+                google_api_key=config["api_key"],
+                temperature=0.7
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {config['provider']}")
 
