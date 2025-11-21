@@ -123,3 +123,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+li p {
+  display: inline !important;
+}

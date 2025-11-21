@@ -82,76 +82,76 @@ class FeedbackAgent:
             zip(state.questions, state.answers, state.evaluations), 1
         ):
             qa_history += f"""
-Question {i} ({question.category}): {question.question_text}
+Pregunta {i} ({question.category}): {question.question_text}
 
-Answer: {answer}
+Respuesta: {answer}
 
-Evaluation Scores:
-- Clarity: {evaluation.scores.clarity}/10
-- Confidence: {evaluation.scores.confidence}/10
-- Relevance: {evaluation.scores.relevance}/10
-- Overall: {evaluation.scores.overall_score}/10
+Puntuaciones de Evaluación:
+- Claridad: {evaluation.scores.clarity}/10
+- Confianza: {evaluation.scores.confidence}/10
+- Relevancia: {evaluation.scores.relevance}/10
+- General: {evaluation.scores.overall_score}/10
 
-NLP Analysis: {evaluation.nlp_features.get('summary', {})}
+Análisis NLP: {evaluation.nlp_features.get('summary', {})}
 ---
 """
 
-        prompt = f"""You are an expert interview coach providing comprehensive feedback on a mock interview.
+        prompt = f"""Eres un coach experto de entrevistas proporcionando retroalimentación integral sobre una entrevista simulada.
 
-Interview Details:
-- Role: {state.role}
-- Seniority Level: {state.seniority}
-- Total Questions: {len(state.questions)}
-- Overall Score: {overall_score}/10
+Detalles de la Entrevista:
+- Puesto: {state.role}
+- Nivel de Antigüedad: {state.seniority}
+- Total de Preguntas: {len(state.questions)}
+- Puntuación General: {overall_score}/10
 
-Complete Interview Transcript with Evaluations:
+Transcripción Completa de la Entrevista con Evaluaciones:
 {qa_history}
 
-Based on this interview performance, provide detailed, actionable feedback in the following format:
+Basándote en el desempeño de esta entrevista, proporciona retroalimentación detallada y accionable en el siguiente formato EN ESPAÑOL:
 
-## OVERALL SUMMARY
-[2-3 sentences summarizing the candidate's overall performance]
+## RESUMEN GENERAL
+[2-3 oraciones resumiendo el desempeño general del candidato]
 
-## STRENGTHS
-- [Specific strength 1]
-- [Specific strength 2]
-- [Specific strength 3]
+## FORTALEZAS
+- [Fortaleza específica 1]
+- [Fortaleza específica 2]
+- [Fortaleza específica 3]
 
-## AREAS FOR IMPROVEMENT
-- [Specific area 1]
-- [Specific area 2]
-- [Specific area 3]
+## ÁREAS DE MEJORA
+- [Área específica 1]
+- [Área específica 2]
+- [Área específica 3]
 
-## DETAILED FEEDBACK
+## RETROALIMENTACIÓN DETALLADA
 
-### Communication Skills
-Strength: [What they did well]
-Weakness: [What needs improvement]
-Suggestions:
-- [Specific actionable suggestion 1]
-- [Specific actionable suggestion 2]
+### Habilidades de Comunicación
+Fortaleza: [Lo que hicieron bien]
+Debilidad: [Lo que necesita mejora]
+Sugerencias:
+- [Sugerencia accionable específica 1]
+- [Sugerencia accionable específica 2]
 
-### Technical Knowledge
-Strength: [What they did well]
-Weakness: [What needs improvement]
-Suggestions:
-- [Specific actionable suggestion 1]
-- [Specific actionable suggestion 2]
+### Conocimiento Técnico
+Fortaleza: [Lo que hicieron bien]
+Debilidad: [Lo que necesita mejora]
+Sugerencias:
+- [Sugerencia accionable específica 1]
+- [Sugerencia accionable específica 2]
 
-### Problem-Solving Approach
-Strength: [What they did well]
-Weakness: [What needs improvement]
-Suggestions:
-- [Specific actionable suggestion 1]
-- [Specific actionable suggestion 2]
+### Enfoque de Resolución de Problemas
+Fortaleza: [Lo que hicieron bien]
+Debilidad: [Lo que necesita mejora]
+Sugerencias:
+- [Sugerencia accionable específica 1]
+- [Sugerencia accionable específica 2]
 
-## RECOMMENDED RESOURCES
-- [Resource 1: Book/Course/Article with brief description]
-- [Resource 2: Practice platform or tool]
-- [Resource 3: Specific topic to study]
-- [Resource 4: Community or forum to join]
+## RECURSOS RECOMENDADOS
+- [Recurso 1: Libro/Curso/Artículo con breve descripción]
+- [Recurso 2: Plataforma de práctica o herramienta]
+- [Recurso 3: Tema específico para estudiar]
+- [Recurso 4: Comunidad o foro para unirse]
 
-Keep feedback constructive, specific, and actionable. Focus on concrete examples from their answers."""
+Mantén la retroalimentación constructiva, específica y accionable. Enfócate en ejemplos concretos de sus respuestas. Responde TODO en español."""
 
         return prompt
 
@@ -174,33 +174,36 @@ Keep feedback constructive, specific, and actionable. Focus on concrete examples
         """
         lines = llm_response.split('\n')
 
-        # Extract sections
-        summary = self._extract_section(lines, "OVERALL SUMMARY")
-        strengths = self._extract_list_items(lines, "STRENGTHS")
-        improvements = self._extract_list_items(lines, "AREAS FOR IMPROVEMENT")
-        resources = self._extract_list_items(lines, "RECOMMENDED RESOURCES")
+        # Extract sections (support both Spanish and English headers)
+        summary = self._extract_section(lines, "RESUMEN GENERAL") or self._extract_section(lines, "OVERALL SUMMARY")
+        strengths = self._extract_list_items(lines, "FORTALEZAS") or self._extract_list_items(lines, "STRENGTHS")
+        improvements = self._extract_list_items(lines, "ÁREAS DE MEJORA") or self._extract_list_items(lines, "AREAS FOR IMPROVEMENT")
+        resources = self._extract_list_items(lines, "RECURSOS RECOMENDADOS") or self._extract_list_items(lines, "RECOMMENDED RESOURCES")
 
         # Extract detailed feedback items
         feedback_items = []
 
         # Communication Skills
-        comm_feedback = self._extract_detailed_feedback(lines, "Communication Skills")
+        comm_feedback = (self._extract_detailed_feedback(lines, "Habilidades de Comunicación") or 
+                         self._extract_detailed_feedback(lines, "Communication Skills"))
         if comm_feedback:
             feedback_items.append(comm_feedback)
 
         # Technical Knowledge
-        tech_feedback = self._extract_detailed_feedback(lines, "Technical Knowledge")
+        tech_feedback = (self._extract_detailed_feedback(lines, "Conocimiento Técnico") or 
+                         self._extract_detailed_feedback(lines, "Technical Knowledge"))
         if tech_feedback:
             feedback_items.append(tech_feedback)
 
         # Problem-Solving
-        ps_feedback = self._extract_detailed_feedback(lines, "Problem-Solving Approach")
+        ps_feedback = (self._extract_detailed_feedback(lines, "Enfoque de Resolución de Problemas") or 
+                       self._extract_detailed_feedback(lines, "Problem-Solving Approach"))
         if ps_feedback:
             feedback_items.append(ps_feedback)
 
         return InterviewFeedback(
             overall_score=overall_score,
-            overall_summary=summary or "Performance evaluation completed.",
+            overall_summary=summary or "Evaluación de desempeño completada.",
             feedback_items=feedback_items,
             recommended_resources=resources,
             strengths=strengths,
@@ -251,18 +254,21 @@ Keep feedback constructive, specific, and actionable. Focus on concrete examples
             weakness = ""
             suggestions = []
 
-            # Look for Strength, Weakness, and Suggestions
+            # Look for Strength, Weakness, and Suggestions (support both Spanish and English)
             for i in range(start_idx + 1, len(lines)):
                 line = lines[i].strip()
 
                 if line.startswith('###') or line.startswith('##'):
                     break
 
-                if line.startswith('Strength:'):
-                    strength = line.replace('Strength:', '').strip()
-                elif line.startswith('Weakness:'):
-                    weakness = line.replace('Weakness:', '').strip()
-                elif line.startswith('Suggestions:'):
+                # Check for strength (English and Spanish)
+                if line.startswith('Strength:') or line.startswith('Fortaleza:'):
+                    strength = line.replace('Strength:', '').replace('Fortaleza:', '').strip()
+                # Check for weakness (English and Spanish)
+                elif line.startswith('Weakness:') or line.startswith('Debilidad:'):
+                    weakness = line.replace('Weakness:', '').replace('Debilidad:', '').strip()
+                # Check for suggestions (English and Spanish)
+                elif line.startswith('Suggestions:') or line.startswith('Sugerencias:'):
                     # Collect suggestions
                     for j in range(i + 1, len(lines)):
                         suggestion_line = lines[j].strip()

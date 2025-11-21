@@ -77,6 +77,66 @@ class APIClient {
     })
   }
 
+  // Start a new interview session with streaming
+  async startInterviewStream(
+    data: StartInterviewRequest,
+    onChunk: (chunk: string) => void,
+    onMetadata: (metadata: any) => void,
+    onComplete: (fullText: string) => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    const url = `${this.baseURL}/api/interviews/start-stream`
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('Response body is null')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.type === 'metadata') {
+                onMetadata(data)
+              } else if (data.type === 'chunk') {
+                onChunk(data.content)
+              } else if (data.type === 'done') {
+                onComplete(data.question_text)
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+    }
+  }
+
   // Submit an answer and get evaluation + next question
   async submitAnswer(
     sessionId: string,
@@ -89,6 +149,69 @@ class APIClient {
         body: JSON.stringify(data),
       }
     )
+  }
+
+  // Submit an answer and stream the next question
+  async submitAnswerStream(
+    sessionId: string,
+    data: SubmitAnswerRequest,
+    onChunk: (chunk: string) => void,
+    onMetadata: (metadata: any) => void,
+    onComplete: (fullText?: string) => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    const url = `${this.baseURL}/api/interviews/${sessionId}/answer-stream`
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('Response body is null')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.type === 'metadata') {
+                onMetadata(data)
+              } else if (data.type === 'chunk') {
+                onChunk(data.content)
+              } else if (data.type === 'done') {
+                onComplete(data.question_text)
+              } else if (data.type === 'evaluation_complete') {
+                onMetadata(data)
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+    }
   }
 
   // Get comprehensive feedback for completed interview

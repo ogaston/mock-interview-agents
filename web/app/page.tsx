@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { InterviewSetup } from '@/components/interview-setup'
-import { InterviewSession } from '@/components/interview-session'
+import { InterviewChatSession } from '@/components/interview-chat-session'
 import { FeedbackView } from '@/components/feedback-view'
 import { SessionHistory } from '@/components/session-history'
 import { apiClient } from '@/lib/api-client'
-import type { InterviewSessionResponse } from '@/lib/types'
+import type { StartInterviewRequest } from '@/lib/types'
 
 type ViewType = 'setup' | 'session' | 'feedback' | 'history'
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>('setup')
-  const [sessionData, setSessionData] = useState<InterviewSessionResponse | null>(null)
+  const [interviewRequest, setInterviewRequest] = useState<StartInterviewRequest | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [hasHistory, setHasHistory] = useState(false)
 
@@ -29,9 +29,8 @@ export default function Home() {
     checkHistory()
   }, [])
 
-  const handleStartInterview = (data: InterviewSessionResponse) => {
-    setSessionData(data)
-    setCurrentSessionId(data.session_id)
+  const handleStartInterview = (request: StartInterviewRequest) => {
+    setInterviewRequest(request)
     setCurrentView('session')
   }
 
@@ -46,7 +45,7 @@ export default function Home() {
   }
 
   const handleNewInterview = () => {
-    setSessionData(null)
+    setInterviewRequest(null)
     setCurrentSessionId(null)
     setCurrentView('setup')
   }
@@ -65,9 +64,9 @@ export default function Home() {
           hasHistory={hasHistory}
         />
       )}
-      {currentView === 'session' && sessionData && (
-        <InterviewSession
-          data={sessionData}
+      {currentView === 'session' && interviewRequest && (
+        <InterviewChatSession
+          interviewData={interviewRequest}
           onComplete={handleCompleteInterview}
         />
       )}

@@ -150,7 +150,7 @@ class InterviewWorkflow:
             total_questions: Number of questions for the interview
 
         Returns:
-            Initial interview state with first question
+            Initial interview state with all questions generated
         """
         # Create initial state
         initial_state = InterviewState(
@@ -160,35 +160,83 @@ class InterviewWorkflow:
             total_questions=total_questions
         )
 
-        # Run workflow to generate first question
-        result = self.graph.invoke(initial_state)
+        # Generate all questions upfront
+        questions = interviewer_agent.generate_all_questions(initial_state)
+        initial_state.questions = questions
+        
+        # Set current question to first one
+        if questions:
+            initial_state.current_question_id = questions[0].question_id
 
-        # Convert LangGraph's AddableValuesDict back to InterviewState
-        if isinstance(result, dict):
-            return InterviewState(**result)
-        return result
+        return initial_state
+
+    def start_interview_incremental(
+        self,
+        role: str,
+        seniority: str,
+        focus_areas: list[str] | None = None,
+        total_questions: int = 10
+    ) -> InterviewState:
+        """
+        Start a new interview session (incremental mode - questions generated one at a time).
+
+        Args:
+            role: Job role/position
+            seniority: Seniority level
+            focus_areas: Optional specific focus areas
+            total_questions: Number of questions for the interview
+
+        Returns:
+            Initial interview state without questions generated yet
+        """
+        # Create initial state without generating questions
+        initial_state = InterviewState(
+            role=role,
+            seniority=seniority,
+            focus_areas=focus_areas or [],
+            total_questions=total_questions
+        )
+
+        return initial_state
 
     def submit_answer(self, state: InterviewState, answer: str) -> InterviewState:
         """
-        Submit an answer and get the next question (or final feedback).
+        Submit an answer and get the next question from pre-generated list.
 
         Args:
             state: Current interview state
             answer: User's answer to the current question
 
         Returns:
-            Updated state with evaluation and next question (or final feedback)
+            Updated state with answer added (no evaluation yet)
         """
         # Add answer to state
         state.answers.append(answer)
 
-        # Run workflow to evaluate and potentially generate next question
-        result = self.graph.invoke(state)
+        # Update current question ID to next question if available
+        if len(state.answers) < len(state.questions):
+            state.current_question_id = state.questions[len(state.answers)].question_id
+        else:
+            # All questions answered
+            state.current_question_id = state.total_questions
 
-        # Convert LangGraph's AddableValuesDict back to InterviewState
-        if isinstance(result, dict):
-            return InterviewState(**result)
-        return result
+        return state
+
+    def evaluate_all_answers(self, state: InterviewState) -> InterviewState:
+        """
+        Evaluate all answers in bulk.
+
+        Args:
+            state: Interview state with all questions and answers
+
+        Returns:
+            State with all evaluations added
+        """
+        # Evaluate all unanswered questions
+        new_evaluations = evaluator_agent.evaluate_all_answers(state)
+        state.evaluations.extend(new_evaluations)
+
+        return state
 
     def get_feedback(self, state: InterviewState) -> InterviewState:
         """
@@ -203,9 +251,9 @@ class InterviewWorkflow:
         if state.final_feedback:
             return state
 
-        # If not all answers have been evaluated, evaluate them first
-        while len(state.evaluations) < len(state.answers):
-            state = evaluate_answer_node(state)
+        # Ensure all answers have been evaluated
+        if len(state.evaluations) < len(state.answers):
+            state = self.evaluate_all_answers(state)
 
         # Generate feedback
         state = generate_feedback_node(state)

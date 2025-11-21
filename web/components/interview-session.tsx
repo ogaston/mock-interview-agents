@@ -100,23 +100,21 @@ export function InterviewSession({ data, onComplete }: InterviewSessionProps) {
 
   const handleNext = async () => {
     if (!currentAnswer.trim() || currentAnswer.length < 10) {
-      setError('Please provide an answer of at least 10 characters.')
+      setError('Por favor proporciona una respuesta de al menos 10 caracteres.')
       return
     }
 
     stopAudio() // Stop any playing audio
     setIsProcessing(true)
     setError(null)
-    setShowEvaluation(false)
 
     try {
       const response = await apiClient.submitAnswer(data.session_id, {
         answer: currentAnswer,
       })
 
-      setLastEvaluation(response.evaluation)
-      setShowEvaluation(true)
       setQuestionsAnswered(response.question_answered)
+      setStatus(response.status)
 
       // Wait a moment to show evaluation before moving to next question or completing
       await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -130,7 +128,7 @@ export function InterviewSession({ data, onComplete }: InterviewSessionProps) {
         if (useVoiceMode) setShowTranscript(false)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to submit answer'
+      const errorMessage = err instanceof Error ? err.message : 'Error al enviar la respuesta'
       setError(errorMessage)
     } finally {
       setIsProcessing(false)

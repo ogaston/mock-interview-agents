@@ -85,9 +85,9 @@ class AnswerResponse(BaseModel):
     """Response after submitting an answer."""
     session_id: str
     question_answered: int
-    evaluation: EvaluationScore
+    evaluation: EvaluationScore | None = Field(None, description="Evaluation scores (only available after all answers are evaluated)")
     next_question: Question | None = Field(None, description="Next question if interview continues")
-    status: Literal["in_progress", "completed"]
+    status: Literal["in_progress", "completed", "evaluated"] = Field("in_progress", description="Status: in_progress, evaluated (all answers evaluated), or completed")
     total_questions: int
     questions_remaining: int
 
