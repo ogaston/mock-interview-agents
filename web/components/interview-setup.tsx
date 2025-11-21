@@ -3,28 +3,28 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { apiClient } from '@/lib/api-client'
-import type { InterviewSessionResponse, Seniority } from '@/lib/types'
+import { Code, Server, Layers, Briefcase, BarChart, Star, TrendingUp, Award, Crown } from 'lucide-react'
+import type { StartInterviewRequest, Seniority } from '@/lib/types'
 
 interface InterviewSetupProps {
-  onStart: (data: InterviewSessionResponse) => void
+  onStart: (data: StartInterviewRequest) => void
   onViewHistory: () => void
   hasHistory: boolean
 }
 
 const roles = [
-  { id: 'Frontend Engineer', name: 'Frontend Engineer' },
-  { id: 'Backend Engineer', name: 'Backend Engineer' },
-  { id: 'Full Stack Engineer', name: 'Full Stack Engineer' },
-  { id: 'Product Manager', name: 'Product Manager' },
-  { id: 'Data Scientist', name: 'Data Scientist' },
+  { id: 'Frontend Engineer', name: 'Ingeniero Frontend', icon: Code },
+  { id: 'Backend Engineer', name: 'Ingeniero Backend', icon: Server },
+  { id: 'Full Stack Engineer', name: 'Ingeniero Full Stack', icon: Layers },
+  { id: 'Product Manager', name: 'Gerente de Producto', icon: Briefcase },
+  { id: 'Data Scientist', name: 'Científico de Datos', icon: BarChart },
 ]
 
-const seniorities: { id: Seniority; name: string }[] = [
-  { id: 'junior', name: 'Junior (0-2 years)' },
-  { id: 'mid', name: 'Mid-level (2-5 years)' },
-  { id: 'senior', name: 'Senior (5+ years)' },
-  { id: 'lead', name: 'Lead (8+ years)' },
+const seniorities: { id: Seniority; name: string; icon: any }[] = [
+  { id: 'junior', name: 'Junior (0-2 años)', icon: Star },
+  { id: 'mid', name: 'Intermedio (2-5 años)', icon: TrendingUp },
+  { id: 'senior', name: 'Senior (5+ años)', icon: Award },
+  { id: 'lead', name: 'Líder (8+ años)', icon: Crown },
 ]
 
 export function InterviewSetup({ onStart, onViewHistory, hasHistory }: InterviewSetupProps) {
@@ -33,75 +33,81 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleStart = async () => {
+  const handleStart = () => {
     if (selectedRole && selectedSeniority) {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const session = await apiClient.startInterview({
-          role: selectedRole,
-          seniority: selectedSeniority as Seniority,
-        })
-        onStart(session)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to start interview'
-        setError(errorMessage)
-        console.error('Error starting interview:', err)
-      } finally {
-        setIsLoading(false)
-      }
+      onStart({
+        role: selectedRole,
+        seniority: selectedSeniority as Seniority,
+      })
     }
   }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 gap-8">
       <div className="text-center space-y-2 mb-4">
-        <h1 className="text-4xl font-bold text-pretty">Interview Coach</h1>
-        <p className="text-muted-foreground">AI-powered interview training with real-time feedback</p>
+        <h1 className="text-4xl font-bold text-pretty">Entrenador de Entrevistas</h1>
+        <p className="text-muted-foreground">Entrenamiento de entrevistas con IA y retroalimentación en tiempo real</p>
       </div>
 
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle>Start Your Practice Interview</CardTitle>
-          <CardDescription>Select your role and experience level</CardDescription>
+          <CardTitle>Inicia tu Entrevista de Práctica</CardTitle>
+          <CardDescription>Selecciona tu puesto y nivel de experiencia</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Position</label>
-            <div className="grid gap-2">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
-                  className={`p-3 text-left rounded-lg border transition-all ${
-                    selectedRole === role.id
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  {role.name}
-                </button>
-              ))}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Column 1: Role Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Puesto
+              </label>
+              <div className="grid gap-2">
+                {roles.map((role) => {
+                  const Icon = role.icon
+                  return (
+                    <button
+                      key={role.id}
+                      onClick={() => setSelectedRole(role.id)}
+                      className={`p-3 text-left rounded-lg border transition-all flex items-center gap-3 ${
+                        selectedRole === role.id
+                          ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
+                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span>{role.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium">Experience Level</label>
-            <div className="grid gap-2">
-              {seniorities.map((level) => (
-                <button
-                  key={level.id}
-                  onClick={() => setSelectedSeniority(level.id)}
-                  className={`p-3 text-left rounded-lg border transition-all ${
-                    selectedSeniority === level.id
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  {level.name}
-                </button>
-              ))}
+            {/* Column 2: Seniority Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                Nivel de Experiencia
+              </label>
+              <div className="grid gap-2">
+                {seniorities.map((level) => {
+                  const Icon = level.icon
+                  return (
+                    <button
+                      key={level.id}
+                      onClick={() => setSelectedSeniority(level.id)}
+                      className={`p-3 text-left rounded-lg border transition-all flex items-center gap-3 ${
+                        selectedSeniority === level.id
+                          ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
+                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span>{level.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
@@ -111,25 +117,30 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
             </div>
           )}
 
-          <Button
-            onClick={handleStart}
-            disabled={!selectedRole || !selectedSeniority || isLoading}
-            className="w-full"
-            size="lg"
-          >
-            {isLoading ? 'Starting Interview...' : 'Begin Interview'}
-          </Button>
+          <div className="flex gap-3 pt-4">
 
           {hasHistory && (
+              <Button
+                onClick={onViewHistory}
+                variant="outline"
+                className="flex-1"
+                size="lg"
+                disabled={isLoading}
+              >
+                Ver Historial
+              </Button>
+            )}
+
+            
             <Button
-              onClick={onViewHistory}
-              variant="outline"
-              className="w-full"
-              disabled={isLoading}
+              onClick={handleStart}
+              disabled={!selectedRole || !selectedSeniority || isLoading}
+              className="flex-1"
+              size="lg"
             >
-              View Session History
+              {isLoading ? 'Iniciando Entrevista...' : 'Comenzar Entrevista'}
             </Button>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>

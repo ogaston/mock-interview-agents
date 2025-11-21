@@ -1,7 +1,7 @@
 // TypeScript interfaces matching backend Pydantic models
 
 export type Seniority = "junior" | "mid" | "senior" | "lead"
-export type InterviewStatus = "in_progress" | "completed"
+export type InterviewStatus = "in_progress" | "evaluated" | "completed"
 
 // Request Models
 export interface StartInterviewRequest {
@@ -78,7 +78,7 @@ export interface InterviewSessionResponse {
 export interface AnswerResponse {
   session_id: string
   question_answered: number
-  evaluation: EvaluationScore
+  evaluation: EvaluationScore | null
   next_question: Question | null
   status: InterviewStatus
   total_questions: number

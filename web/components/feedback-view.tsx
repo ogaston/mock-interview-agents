@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { apiClient } from '@/lib/api-client'
 import type { FeedbackResponse } from '@/lib/types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface FeedbackViewProps {
   sessionId: string
@@ -41,7 +43,7 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Generating comprehensive feedback...</p>
+          <p className="text-muted-foreground">Generando retroalimentación completa...</p>
         </div>
       </div>
     )
@@ -53,8 +55,8 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
-              <p className="text-destructive">{error || 'Failed to load feedback'}</p>
-              <Button onClick={onNewInterview}>Start New Interview</Button>
+              <p className="text-destructive">{error || 'Error al cargar la retroalimentación'}</p>
+              <Button onClick={onNewInterview}>Iniciar Nueva Entrevista</Button>
             </div>
           </CardContent>
         </Card>
@@ -68,17 +70,21 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 gap-6">
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Interview Complete!</h1>
+          <h1 className="text-3xl font-bold">¡Entrevista Completa!</h1>
           <p className="text-muted-foreground">
-            Here's your detailed feedback and recommendations
+            Aquí está tu retroalimentación detallada y recomendaciones
           </p>
         </div>
 
         {/* Overall Score */}
         <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
           <CardHeader>
-            <CardTitle>Overall Performance</CardTitle>
-            <CardDescription>{feedbackData.feedback.overall_summary}</CardDescription>
+            <CardTitle>Desempeño General</CardTitle>
+            <CardDescription className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {feedbackData.feedback.overall_summary}
+              </ReactMarkdown>
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center">
@@ -88,7 +94,7 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
               </div>
               {feedbackData.interview_duration_minutes && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  Completed in {feedbackData.interview_duration_minutes} minutes
+                  Completado en {feedbackData.interview_duration_minutes} minutos
                 </p>
               )}
             </div>
@@ -99,15 +105,19 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         {feedbackData.feedback.strengths.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Your Strengths</CardTitle>
-              <CardDescription>Areas where you excelled</CardDescription>
+              <CardTitle>Tus Fortalezas</CardTitle>
+              <CardDescription>Áreas en las que sobresaliste</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 {feedbackData.feedback.strengths.map((strength, index) => (
                   <li key={index} className="flex gap-3">
                     <span className="text-green-600">✓</span>
-                    <p>{strength}</p>
+                    <div className="prose prose-sm dark:prose-invert max-w-none flex-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {strength}
+                      </ReactMarkdown>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -119,15 +129,19 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         {feedbackData.feedback.areas_for_improvement.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Areas for Improvement</CardTitle>
-              <CardDescription>Focus on these to enhance your performance</CardDescription>
+              <CardTitle>Áreas de Mejora</CardTitle>
+              <CardDescription>Enfócate en estas para mejorar tu desempeño</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 {feedbackData.feedback.areas_for_improvement.map((area, index) => (
                   <li key={index} className="flex gap-3">
                     <span className="text-primary">→</span>
-                    <p>{area}</p>
+                    <div className="prose prose-sm dark:prose-invert max-w-none flex-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {area}
+                      </ReactMarkdown>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -139,28 +153,44 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         {feedbackData.feedback.feedback_items.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Detailed Feedback by Category</CardTitle>
+              <CardTitle>Retroalimentación Detallada por Categoría</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {feedbackData.feedback.feedback_items.map((item, index) => (
                 <div key={index} className="border-l-2 border-primary pl-4 space-y-2">
                   <h4 className="font-semibold">{item.category}</h4>
                   {item.strength && (
-                    <p className="text-sm">
-                      <span className="font-medium text-green-600">Strength:</span> {item.strength}
-                    </p>
+                    <div className="text-sm">
+                      <span className="font-medium text-green-600">Fortaleza:</span>
+                      <div className="prose prose-sm dark:prose-invert max-w-none inline">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {item.strength}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
                   )}
                   {item.weakness && (
-                    <p className="text-sm">
-                      <span className="font-medium text-amber-600">Area to improve:</span> {item.weakness}
-                    </p>
+                    <div className="text-sm">
+                      <span className="font-medium text-amber-600">Área a mejorar:</span>
+                      <div className="prose prose-sm dark:prose-invert max-w-none inline">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {item.weakness}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
                   )}
                   {item.suggestions.length > 0 && (
                     <div className="text-sm">
-                      <span className="font-medium">Suggestions:</span>
+                      <span className="font-medium">Sugerencias:</span>
                       <ul className="list-disc list-inside ml-2 mt-1">
                         {item.suggestions.map((suggestion, i) => (
-                          <li key={i}>{suggestion}</li>
+                          <li key={i}>
+                            <div className="prose prose-sm dark:prose-invert max-w-none inline">
+                              {/* <ReactMarkdown remarkPlugins={[remarkGfm]}> */}
+                                {suggestion}
+                              {/* </ReactMarkdown> */}
+                            </div>
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -175,15 +205,19 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         {feedbackData.feedback.recommended_resources.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Recommended Resources</CardTitle>
-              <CardDescription>Continue your learning journey</CardDescription>
+              <CardTitle>Recursos Recomendados</CardTitle>
+              <CardDescription>Continúa tu viaje de aprendizaje</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 {feedbackData.feedback.recommended_resources.map((resource, index) => (
                   <li key={index} className="flex gap-3">
                     <span className="text-primary">📚</span>
-                    <p>{resource}</p>
+                    <div className="prose prose-sm dark:prose-invert max-w-none flex-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {resource}
+                      </ReactMarkdown>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -194,7 +228,7 @@ export function FeedbackView({ sessionId, onNewInterview }: FeedbackViewProps) {
         {/* Action Buttons */}
         <div className="flex gap-3">
           <Button onClick={onNewInterview} className="flex-1" size="lg">
-            Start Another Interview
+            Iniciar Otra Entrevista
           </Button>
         </div>
       </div>
