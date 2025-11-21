@@ -3,7 +3,7 @@ Main FastAPI application for Mock Interview Agent.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import interviews
+from app.api.routes import interviews, audio
 from app.config import settings
 
 # Create FastAPI app
@@ -26,6 +26,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(interviews.router)
+app.include_router(audio.router)
 
 
 @app.get("/")

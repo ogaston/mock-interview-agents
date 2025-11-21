@@ -37,6 +37,18 @@ class Settings(BaseSettings):
     max_questions_per_interview: int = 10
     default_interview_duration_minutes: int = 30
 
+    # Voice Feature Settings
+    enable_voice_features: bool = True
+    tts_provider: Literal["elevenlabs", "openai"] = "elevenlabs"
+    stt_provider: Literal["browser", "openai"] = "openai"
+    
+    # ElevenLabs Settings
+    elevenlabs_api_key: str | None = None
+    elevenlabs_model: str = "eleven_multilingual_v2"
+    elevenlabs_voice_id: str = "21m00Tcm4TlvDq8ikWAM"  # Default: Rachel
+    elevenlabs_stability: float = 0.5
+    elevenlabs_similarity_boost: float = 0.75
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
