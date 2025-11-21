@@ -25,3 +25,4 @@ scipy==1.15.3
 
 # Optional (if using LlamaIndex for role descriptions)
 # llama-index==0.12.7
+langchain-google-genai
