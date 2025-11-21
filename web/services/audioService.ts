@@ -42,7 +42,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || 'Transcription failed');
+        throw new Error(error.detail || 'Error en la transcripción');
     }
 
     const data: TranscribeResponse = await response.json();
@@ -68,7 +68,7 @@ export async function synthesizeSpeech(
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || 'Speech synthesis failed');
+        throw new Error(error.detail || 'Error en la síntesis de voz');
     }
 
     return await response.blob();
@@ -126,7 +126,7 @@ export function createBrowserSTT(): any | null {
     const recognition = new SpeechRecognition();
     recognition.continuous = true; // Changed to true for better flow
     recognition.interimResults = true; // Enable live partial results
-    recognition.lang = 'en-US';
+    recognition.lang = 'es-ES'; // Spanish language support
 
     return recognition;
 }

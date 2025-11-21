@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Code, Server, Layers, Briefcase, BarChart, Star, TrendingUp, Award, Crown } from 'lucide-react'
-import type { StartInterviewRequest, Seniority } from '@/lib/types'
+import { Code, Server, Layers, Briefcase, BarChart, Star, TrendingUp, Award, Crown, Mic, MessageSquare } from 'lucide-react'
+import type { StartInterviewRequest, Seniority, SessionType } from '@/lib/types'
 
 interface InterviewSetupProps {
   onStart: (data: StartInterviewRequest) => void
@@ -27,17 +27,24 @@ const seniorities: { id: Seniority; name: string; icon: any }[] = [
   { id: 'lead', name: 'Líder (8+ años)', icon: Crown },
 ]
 
+const sessionTypes: { id: SessionType; name: string; description: string; icon: any }[] = [
+  { id: 'voice', name: 'Sesión con Voz', description: 'Entrevista interactiva con voz y audio', icon: Mic },
+  { id: 'chat', name: 'Sesión de Chat', description: 'Entrevista basada en texto', icon: MessageSquare },
+]
+
 export function InterviewSetup({ onStart, onViewHistory, hasHistory }: InterviewSetupProps) {
   const [selectedRole, setSelectedRole] = useState('')
   const [selectedSeniority, setSelectedSeniority] = useState<Seniority | ''>('')
+  const [selectedSessionType, setSelectedSessionType] = useState<SessionType | ''>('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleStart = () => {
-    if (selectedRole && selectedSeniority) {
+    if (selectedRole && selectedSeniority && selectedSessionType) {
       onStart({
         role: selectedRole,
         seniority: selectedSeniority as Seniority,
+        sessionType: selectedSessionType as SessionType,
       })
     }
   }
@@ -52,9 +59,43 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
       <Card className="w-full max-w-4xl">
         <CardHeader>
           <CardTitle>Inicia tu Entrevista de Práctica</CardTitle>
-          <CardDescription>Selecciona tu puesto y nivel de experiencia</CardDescription>
+          <CardDescription>Selecciona tu puesto, nivel de experiencia y tipo de sesión</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Session Type Selection - Full Width */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Tipo de Sesión
+            </label>
+            <div className="grid md:grid-cols-2 gap-3">
+              {sessionTypes.map((type) => {
+                const Icon = type.icon
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => setSelectedSessionType(type.id)}
+                    className={`p-4 text-left rounded-lg border transition-all ${
+                      selectedSessionType === type.id
+                        ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm ring-2 ring-primary/20'
+                        : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Icon className="w-6 h-6 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <div className="font-semibold">{type.name}</div>
+                        <div className="text-xs text-muted-foreground">{type.description}</div>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+              <hr className="my-8 border-border opacity-40" />
+
           <div className="grid md:grid-cols-2 gap-6">
             {/* Column 1: Role Selection */}
             <div className="space-y-3">
@@ -134,7 +175,7 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
             
             <Button
               onClick={handleStart}
-              disabled={!selectedRole || !selectedSeniority || isLoading}
+              disabled={!selectedRole || !selectedSeniority || !selectedSessionType || isLoading}
               className="flex-1"
               size="lg"
             >

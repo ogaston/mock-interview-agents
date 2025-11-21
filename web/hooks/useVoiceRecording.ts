@@ -92,12 +92,12 @@ export function useVoiceRecording(options: UseVoiceRecordingOptions = {}) {
 
                         // Don't treat "no-speech" as a critical error
                         if (event.error === 'no-speech') {
-                            const err = new Error('No speech detected. Please try again.');
+                            const err = new Error('No se detectó voz. Por favor intenta de nuevo.');
                             setError(err.message);
                             onError?.(err);
                             setState('idle');
                         } else {
-                            const err = new Error(`Speech recognition error: ${event.error}`);
+                            const err = new Error(`Error de reconocimiento de voz: ${event.error}`);
                             setError(err.message);
                             onError?.(err);
                             setState('error');

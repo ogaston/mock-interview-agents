@@ -49,7 +49,7 @@ export function VoiceButton({
                 disabled && 'opacity-50 cursor-not-allowed',
                 className
             )}
-            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+            aria-label={isRecording ? 'Detener grabación' : 'Iniciar grabación'}
         >
             {/* Pulsing animation when recording */}
             {isRecording && (
@@ -89,10 +89,10 @@ export function VoiceButtonWithHint(props: VoiceButtonProps) {
             <VoiceButton {...props} />
             <p className="text-xs text-gray-500 dark:text-gray-400">
                 {isProcessing
-                    ? 'Processing...'
+                    ? 'Procesando...'
                     : isRecording
-                        ? 'Click to stop'
-                        : 'Click to speak'}
+                        ? 'Clic para detener'
+                        : 'Clic para hablar'}
             </p>
         </div>
     );

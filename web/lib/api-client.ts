@@ -58,7 +58,7 @@ class APIClient {
       if (error instanceof Error) {
         throw error
       }
-      throw new Error('An unexpected error occurred')
+      throw new Error('Ocurrió un error inesperado')
     }
   }
 
@@ -97,14 +97,14 @@ class APIClient {
       })
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        throw new Error(`Error de API: ${response.status} ${response.statusText}`)
       }
 
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
 
       if (!reader) {
-        throw new Error('Response body is null')
+        throw new Error('El cuerpo de la respuesta es nulo')
       }
 
       while (true) {
@@ -133,7 +133,7 @@ class APIClient {
         }
       }
     } catch (error) {
-      onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+      onError(error instanceof Error ? error : new Error('Ocurrió un error desconocido'))
     }
   }
 
@@ -172,14 +172,14 @@ class APIClient {
       })
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+        throw new Error(`Error de API: ${response.status} ${response.statusText}`)
       }
 
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
 
       if (!reader) {
-        throw new Error('Response body is null')
+        throw new Error('El cuerpo de la respuesta es nulo')
       }
 
       while (true) {
@@ -210,7 +210,7 @@ class APIClient {
         }
       }
     } catch (error) {
-      onError(error instanceof Error ? error : new Error('Unknown error occurred'))
+      onError(error instanceof Error ? error : new Error('Ocurrió un error desconocido'))
     }
   }
 

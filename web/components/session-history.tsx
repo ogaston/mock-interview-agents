@@ -29,7 +29,7 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
         )
         setSessions(sortedData)
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load session history'
+        const errorMessage = err instanceof Error ? err.message : 'Error al cargar el historial de sesiones'
         setError(errorMessage)
         console.error('Error fetching history:', err)
       } finally {
@@ -45,7 +45,7 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading session history...</p>
+          <p className="text-muted-foreground">Cargando historial de sesiones...</p>
         </div>
       </div>
     )
@@ -55,9 +55,9 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
     <div className="flex flex-col items-center justify-center min-h-screen p-4 gap-6">
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center space-y-2 mb-4">
-          <h1 className="text-3xl font-bold">Session History</h1>
+          <h1 className="text-3xl font-bold">Historial de Sesiones</h1>
           <p className="text-muted-foreground">
-            Review your past interviews and track your progress
+            Revisa tus entrevistas pasadas y rastrea tu progreso
           </p>
         </div>
 
@@ -72,16 +72,16 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
         {sessions.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center space-y-4">
-              <p className="text-muted-foreground">No interview sessions yet</p>
+              <p className="text-muted-foreground">No hay sesiones de entrevista aún</p>
               <p className="text-sm text-muted-foreground">
-                Start your first practice interview to see your history here
+                Inicia tu primera entrevista de práctica para ver tu historial aquí
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => {
-              const formattedDate = new Date(session.created_at).toLocaleDateString('en-US', {
+              const formattedDate = new Date(session.created_at).toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -101,7 +101,7 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
                           {session.seniority} • {formattedDate}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {session.questions_answered}/{session.total_questions} questions • {session.status}
+                          {session.questions_answered}/{session.total_questions} preguntas • {session.status}
                         </p>
                       </div>
                       <div className="text-right">
@@ -112,7 +112,7 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
                           </p>
                         ) : (
                           <p className="text-sm text-muted-foreground">
-                            {session.status === 'completed' ? 'Evaluating...' : 'In Progress'}
+                            {session.status === 'completed' ? 'Evaluando...' : 'En Progreso'}
                           </p>
                         )}
                       </div>
@@ -125,7 +125,7 @@ export function SessionHistory({ onNewInterview, onViewSession }: SessionHistory
         )}
 
         <Button onClick={onNewInterview} className="w-full" size="lg">
-          Start New Interview
+          Iniciar Nueva Entrevista
         </Button>
       </div>
     </div>

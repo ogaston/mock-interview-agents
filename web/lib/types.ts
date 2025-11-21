@@ -2,12 +2,14 @@
 
 export type Seniority = "junior" | "mid" | "senior" | "lead"
 export type InterviewStatus = "in_progress" | "evaluated" | "completed"
+export type SessionType = "voice" | "chat"
 
 // Request Models
 export interface StartInterviewRequest {
   role: string
   seniority: Seniority
   focus_areas?: string[]
+  sessionType?: SessionType
 }
 
 export interface SubmitAnswerRequest {

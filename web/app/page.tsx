@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { InterviewSetup } from '@/components/interview-setup'
-import { InterviewChatSession } from '@/components/interview-chat-session'
+import { InterviewSession } from '@/components/interview-session'
 import { FeedbackView } from '@/components/feedback-view'
 import { SessionHistory } from '@/components/session-history'
 import { apiClient } from '@/lib/api-client'
 import type { StartInterviewRequest } from '@/lib/types'
+import { InterviewChatSession } from '@/components/interview-chat-session'
 
 type ViewType = 'setup' | 'session' | 'feedback' | 'history'
 
@@ -64,7 +65,13 @@ export default function Home() {
           hasHistory={hasHistory}
         />
       )}
-      {currentView === 'session' && interviewRequest && (
+      {currentView === 'session' && interviewRequest && interviewRequest.sessionType === 'voice' && (
+        <InterviewSession
+          interviewData={interviewRequest}
+          onComplete={handleCompleteInterview}
+        />
+      )}
+      {currentView === 'session' && interviewRequest && interviewRequest.sessionType === 'chat' && (
         <InterviewChatSession
           interviewData={interviewRequest}
           onComplete={handleCompleteInterview}

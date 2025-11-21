@@ -135,7 +135,8 @@ async def _transcribe_openai(audio_bytes: bytes, filename: str) -> dict:
         
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=audio_file,
+            language="es"  # Spanish language support
         )
         
         return {"text": transcript.text}
