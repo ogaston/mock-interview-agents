@@ -14,10 +14,9 @@ from app.graph.workflow import interview_workflow
 from app.agents.interviewer import interviewer_agent
 from app.config import settings
 from app.store import interview_sessions
-from app.api.routes.audio import synthesize_audio_base64
+from app.services.audio_service import synthesize_audio_base64
 
 router = APIRouter(prefix="/api/interviews", tags=["interviews"])
-
 
 @router.post("/start", response_model=InterviewSessionResponse, status_code=status.HTTP_201_CREATED)
 async def start_interview(

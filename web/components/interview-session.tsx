@@ -39,9 +39,16 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
   // Track the currently playing question ID to prevent double-firing/race conditions
   const playingQuestionIdRef = useRef<string | null>(null)
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+  const hasInitialized = useRef(false)
 
   // Initialize Interview
   useEffect(() => {
+    // Prevent double initialization in React Strict Mode
+    if (hasInitialized.current) {
+      return
+    }
+    hasInitialized.current = true
+
     const initInterview = async () => {
       try {
         setIsInitializing(true)

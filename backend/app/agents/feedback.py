@@ -4,7 +4,8 @@ Feedback Agent - Generates personalized feedback and recommendations using LLM.
 from app.config import settings
 from app.models.schemas import InterviewState, InterviewFeedback, FeedbackItem, AnswerEvaluation
 
-from app.mocks.agents import MockFeedbackAgent 
+from app.mocks.agents import MockFeedbackAgent
+from app.prompts.feedback import get_feedback_prompt, get_qa_history_prompt
 
 class FeedbackAgent:
     """Agent responsible for generating personalized feedback."""
@@ -86,79 +87,8 @@ class FeedbackAgent:
         for i, (question, answer, evaluation) in enumerate(
             zip(state.questions, state.answers, state.evaluations), 1
         ):
-            qa_history += f"""
-Pregunta {i} ({question.category}): {question.question_text}
-
-Respuesta: {answer}
-
-Puntuaciones de Evaluación:
-- Claridad: {evaluation.scores.clarity}/10
-- Confianza: {evaluation.scores.confidence}/10
-- Relevancia: {evaluation.scores.relevance}/10
-- General: {evaluation.scores.overall_score}/10
-
-Análisis NLP: {evaluation.nlp_features.get('summary', {})}
----
-"""
-
-        prompt = f"""Eres un coach experto de entrevistas proporcionando retroalimentación integral sobre una entrevista simulada.
-
-Detalles de la Entrevista:
-- Puesto: {state.role}
-- Nivel de Antigüedad: {state.seniority}
-- Total de Preguntas: {len(state.questions)}
-- Puntuación General: {overall_score}/10
-
-Transcripción Completa de la Entrevista con Evaluaciones:
-{qa_history}
-
-Basándote en el desempeño de esta entrevista, proporciona retroalimentación detallada y accionable en el siguiente formato EN ESPAÑOL:
-
-## RESUMEN GENERAL
-[2-3 oraciones resumiendo el desempeño general del candidato]
-
-## FORTALEZAS
-- [Fortaleza específica 1]
-- [Fortaleza específica 2]
-- [Fortaleza específica 3]
-
-## ÁREAS DE MEJORA
-- [Área específica 1]
-- [Área específica 2]
-- [Área específica 3]
-
-## RETROALIMENTACIÓN DETALLADA
-
-### Habilidades de Comunicación
-Fortaleza: [Lo que hicieron bien]
-Debilidad: [Lo que necesita mejora]
-Sugerencias:
-- [Sugerencia accionable específica 1]
-- [Sugerencia accionable específica 2]
-
-### Conocimiento Técnico
-Fortaleza: [Lo que hicieron bien]
-Debilidad: [Lo que necesita mejora]
-Sugerencias:
-- [Sugerencia accionable específica 1]
-- [Sugerencia accionable específica 2]
-
-### Enfoque de Resolución de Problemas
-Fortaleza: [Lo que hicieron bien]
-Debilidad: [Lo que necesita mejora]
-Sugerencias:
-- [Sugerencia accionable específica 1]
-- [Sugerencia accionable específica 2]
-
-## RECURSOS RECOMENDADOS
-- [Recurso 1: Libro/Curso/Artículo con breve descripción]
-- [Recurso 2: Plataforma de práctica o herramienta]
-- [Recurso 3: Tema específico para estudiar]
-- [Recurso 4: Comunidad o foro para unirse]
-
-Mantén la retroalimentación constructiva, específica y accionable. Enfócate en ejemplos concretos de sus respuestas. Responde TODO en español."""
-
-        return prompt
+            qa_history += get_qa_history_prompt(question, answer, evaluation, i)
+        return get_feedback_prompt(state, overall_score, qa_history)
 
     def _parse_llm_feedback(
         self,

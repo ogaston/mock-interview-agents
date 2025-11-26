@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { InterviewSetup } from '@/components/interview-setup'
 import { InterviewSession } from '@/components/interview-session'
 import { FeedbackView } from '@/components/feedback-view'
@@ -16,9 +16,16 @@ export default function Home() {
   const [interviewRequest, setInterviewRequest] = useState<StartInterviewRequest | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [hasHistory, setHasHistory] = useState(false)
+  const hasCheckedHistory = useRef(false)
 
   // Check if there's history on mount
   useEffect(() => {
+    // Prevent double check in React Strict Mode
+    if (hasCheckedHistory.current) {
+      return
+    }
+    hasCheckedHistory.current = true
+
     const checkHistory = async () => {
       try {
         const history = await apiClient.getHistory()

@@ -1,73 +1,11 @@
-"""
-Audio API routes for voice interview features.
-Handles speech-to-text (transcription) and text-to-speech (synthesis).
-"""
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from app.config import settings
 import io
 import base64
-
+from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
+from app.config import settings
 from app.mocks.audio import generate_mock_audio_bytes
 
-router = APIRouter(prefix="/api/audio", tags=["audio"])
-
-
-class SynthesizeRequest(BaseModel):
-    """Request model for text-to-speech synthesis."""
-    text: str
-    voice_id: str | None = None  # Optional: override default voice
-
-
-@router.post("/synthesize")
-async def synthesize_speech(request: SynthesizeRequest):
-    """
-    Convert text to speech using configured TTS provider.
-    
-    Args:
-        request: Text to synthesize and optional voice settings
-        
-    Returns:
-        Audio file as streaming response
-    """
-    if not settings.enable_voice_features:
-        raise HTTPException(status_code=403, detail="Voice features are disabled")
-    
-    if settings.tts_provider == "elevenlabs":
-        return await _synthesize_elevenlabs(request.text, request.voice_id)
-    elif settings.tts_provider == "openai":
-        return await _synthesize_openai(request.text)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported TTS provider: {settings.tts_provider}")
-
-
-@router.post("/transcribe")
-async def transcribe_audio(file: UploadFile = File(...)):
-    """
-    Transcribe audio to text using configured STT provider.
-    
-    Args:
-        file: Audio file upload (mp3, wav, webm, etc.)
-        
-    Returns:
-        Transcribed text
-    """
-    if not settings.enable_voice_features:
-        raise HTTPException(status_code=403, detail="Voice features are disabled")
-    
-    # Validate file size (max 25MB for OpenAI Whisper)
-    contents = await file.read()
-    if len(contents) > 25 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Audio file too large (max 25MB)")
-    
-    if settings.stt_provider == "openai":
-        return await _transcribe_openai(contents, file.filename)
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported STT provider: {settings.stt_provider}")
-
-
-async def _synthesize_elevenlabs(text: str, voice_id: str | None = None) -> StreamingResponse:
+def synthesize_elevenlabs(text: str, voice_id: str | None = None) -> StreamingResponse:
     """Synthesize speech using ElevenLabs API."""
     # Check for mock mode
     if settings.use_mock_tts or settings.tts_provider == "mock":

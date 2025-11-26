@@ -78,7 +78,7 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
                     className={`p-4 text-left rounded-lg border transition-all ${
                       selectedSessionType === type.id
                         ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                        : 'border-border hover:border-primary/50 hover:bg-primary/10'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -113,7 +113,7 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
                       className={`p-3 text-left rounded-lg border transition-all flex items-center gap-3 ${
                         selectedRole === role.id
                           ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
-                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                          : 'border-border hover:border-primary/50 hover:bg-primary/10'
                       }`}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
@@ -140,7 +140,7 @@ export function InterviewSetup({ onStart, onViewHistory, hasHistory }: Interview
                       className={`p-3 text-left rounded-lg border transition-all flex items-center gap-3 ${
                         selectedSeniority === level.id
                           ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
-                          : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                          : 'border-border hover:border-primary/50 hover:bg-primary/10'
                       }`}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
