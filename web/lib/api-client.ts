@@ -69,9 +69,11 @@ class APIClient {
 
   // Start a new interview session
   async startInterview(
-    data: StartInterviewRequest
+    data: StartInterviewRequest,
+    includeAudio: boolean = false
   ): Promise<InterviewSessionResponse> {
-    return this.request<InterviewSessionResponse>('/api/interviews/start', {
+    const url = `/api/interviews/start${includeAudio ? '?include_audio=true' : ''}`
+    return this.request<InterviewSessionResponse>(url, {
       method: 'POST',
       body: JSON.stringify(data),
     })
@@ -85,7 +87,7 @@ class APIClient {
     onComplete: (fullText: string) => void,
     onError: (error: Error) => void
   ): Promise<void> {
-    const url = `${this.baseURL}/api/interviews/start-stream`
+    const url = `${this.baseURL}/api/interviews/stream/start`
 
     try {
       const response = await fetch(url, {
@@ -140,15 +142,14 @@ class APIClient {
   // Submit an answer and get evaluation + next question
   async submitAnswer(
     sessionId: string,
-    data: SubmitAnswerRequest
+    data: SubmitAnswerRequest,
+    includeAudio: boolean = false
   ): Promise<AnswerResponse> {
-    return this.request<AnswerResponse>(
-      `/api/interviews/${sessionId}/answer`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    )
+    const url = `/api/interviews/${sessionId}/answer${includeAudio ? '?include_audio=true' : ''}`
+    return this.request<AnswerResponse>(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 
   // Submit an answer and stream the next question
@@ -160,7 +161,7 @@ class APIClient {
     onComplete: (fullText?: string) => void,
     onError: (error: Error) => void
   ): Promise<void> {
-    const url = `${this.baseURL}/api/interviews/${sessionId}/answer-stream`
+    const url = `${this.baseURL}/api/interviews/stream/${sessionId}/answer`
 
     try {
       const response = await fetch(url, {

@@ -10,13 +10,38 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-## 2. Configure API Key
+## 2. Configure API Key (or Use Mock Mode)
+
+### Option A: Use Mock Mode (No API Keys Required)
+
+For testing and development, you can use mock mode which doesn't require any API keys:
 
 ```bash
 # Copy environment template
 cp .env.example .env
 
-# Edit .env and add your OpenAI API key
+# Edit .env and enable mock mode
+# Windows: notepad .env
+# Mac/Linux: nano .env
+```
+
+Add to `.env`:
+```env
+USE_MOCK_LLM=true
+USE_MOCK_TTS=true
+LLM_PROVIDER=mock
+TTS_PROVIDER=mock
+```
+
+**Note:** Mock mode uses fake responses and silent audio. Perfect for development and testing!
+
+### Option B: Use Real API Keys
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env and add your API key
 # Windows: notepad .env
 # Mac/Linux: nano .env
 ```

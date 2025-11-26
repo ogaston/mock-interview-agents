@@ -33,6 +33,7 @@ class Question(BaseModel):
     question_text: str = Field(..., description="The interview question")
     category: str | None = Field(None, description="Category of the question (e.g., technical, behavioral)")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+    audio_data: str | None = Field(None, description="Base64-encoded audio data for the question (if voice features enabled)")
 
 
 class EvaluationScore(BaseModel):

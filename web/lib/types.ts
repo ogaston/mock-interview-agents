@@ -22,6 +22,7 @@ export interface Question {
   question_text: string
   category: string | null
   timestamp: string
+  audio_data?: string | null  // Base64-encoded audio data
 }
 
 export interface EvaluationScore {

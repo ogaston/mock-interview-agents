@@ -328,7 +328,7 @@ export function InterviewChatSession({ interviewData, onComplete }: InterviewCha
             <div className="flex gap-2">
               <Textarea
                 ref={textareaRef}
-                placeholder="Escribe tu respuesta aquí... (mínimo 10 caracteres, Enter para enviar, Shift+Enter para nueva línea)"
+                placeholder="Escribe tu respuesta aquí..."
                 value={currentAnswer}
                 onChange={(e) => setCurrentAnswer(e.target.value)}
                 onKeyDown={handleKeyPress}
@@ -341,16 +341,29 @@ export function InterviewChatSession({ interviewData, onComplete }: InterviewCha
                 size="lg"
                 className="px-4"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-5 h-full" />
               </Button>
             </div>
           )}
           
-          {currentAnswer.length > 0 && currentAnswer.length < 10 && !isComplete && (
+          {(currentAnswer.length > 0 && currentAnswer.length < 10 && !isComplete) ? (
             <p className="text-xs text-muted-foreground mt-2">
               {10 - currentAnswer.length} caracteres más necesarios
             </p>
-          )}
+          ): (<span className="text-xs text-muted-foreground mt-2" >
+              Mínimo 10 caracteres, Enter para enviar y <code
+              style={{ background: '#f3f3f3',
+                padding: '0.1em 0.4em',
+                borderRadius: '0.2em',
+                fontSize: '0.8em',
+                fontWeight: 'bold',
+                color: '#333',
+                fontFamily: 'monospace',
+                fontVariant: 'small-caps',
+                textTransform: 'uppercase', }}
+              >Shift+Enter</code> para nueva línea.
+            </span>)
+            }
         </div>
       </div>
     </div>

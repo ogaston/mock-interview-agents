@@ -271,6 +271,12 @@ LOG_LEVEL=INFO
 # Interview Settings
 MAX_QUESTIONS_PER_INTERVIEW=10
 DEFAULT_INTERVIEW_DURATION_MINUTES=30
+
+# CORS Settings
+CORS_ALLOW_ORIGINS=*  # Comma-separated list (e.g., "http://localhost:3000,http://localhost:3001") or "*" for all
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=*  # Comma-separated list (e.g., "GET,POST,PUT,DELETE") or "*" for all
+CORS_ALLOW_HEADERS=*  # Comma-separated list (e.g., "Content-Type,Authorization") or "*" for all
 ```
 
 ## Example Usage

@@ -5,6 +5,7 @@ from datetime import datetime
 from app.config import settings
 from app.models.schemas import Question, InterviewState
 
+from app.mocks.agents import MockInterviewerAgent
 
 class InterviewerAgent:
     """Agent responsible for generating interview questions."""
@@ -17,7 +18,11 @@ class InterviewerAgent:
         """Initialize the appropriate LLM based on configuration."""
         config = settings.get_llm_config()
 
-        if config["provider"] == "openai":
+        if config["provider"] == "mock":
+            mock_interviewer_agent = MockInterviewerAgent()
+            return mock_interviewer_agent._initialize_llm()
+            
+        elif config["provider"] == "openai":
             from langchain_openai import ChatOpenAI
             return ChatOpenAI(
                 model=config["model"],

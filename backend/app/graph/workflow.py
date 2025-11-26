@@ -3,8 +3,9 @@ LangGraph Workflow for orchestrating the interview process.
 Connects InterviewerAgent, EvaluatorAgent, and FeedbackAgent in a deliberative flow.
 """
 from typing import Literal
+from datetime import datetime
 from langgraph.graph import StateGraph, END
-from app.models.schemas import InterviewState
+from app.models.schemas import InterviewState, Question
 from app.agents.interviewer import interviewer_agent
 from app.agents.evaluator import evaluator_agent
 from app.agents.feedback import feedback_agent
@@ -133,12 +134,13 @@ class InterviewWorkflow:
 
         return workflow.compile()
 
-    def start_interview(
+    def start_interview_incremental(
         self,
         role: str,
         seniority: str,
         focus_areas: list[str] | None = None,
-        total_questions: int = 10
+        total_questions: int = 10,
+        generate_first_question: bool = True
     ) -> InterviewState:
         """
         Start a new interview session.
@@ -148,9 +150,11 @@ class InterviewWorkflow:
             seniority: Seniority level
             focus_areas: Optional specific focus areas
             total_questions: Number of questions for the interview
+            generate_first_question: Whether to generate the first question immediately.
+                                     Set to False for streaming endpoints.
 
         Returns:
-            Initial interview state with all questions generated
+            Initial interview state, with first question generated if generate_first_question=True
         """
         # Create initial state
         initial_state = InterviewState(
@@ -160,42 +164,11 @@ class InterviewWorkflow:
             total_questions=total_questions
         )
 
-        # Generate all questions upfront
-        questions = interviewer_agent.generate_all_questions(initial_state)
-        initial_state.questions = questions
-        
-        # Set current question to first one
-        if questions:
-            initial_state.current_question_id = questions[0].question_id
-
-        return initial_state
-
-    def start_interview_incremental(
-        self,
-        role: str,
-        seniority: str,
-        focus_areas: list[str] | None = None,
-        total_questions: int = 10
-    ) -> InterviewState:
-        """
-        Start a new interview session (incremental mode - questions generated one at a time).
-
-        Args:
-            role: Job role/position
-            seniority: Seniority level
-            focus_areas: Optional specific focus areas
-            total_questions: Number of questions for the interview
-
-        Returns:
-            Initial interview state without questions generated yet
-        """
-        # Create initial state without generating questions
-        initial_state = InterviewState(
-            role=role,
-            seniority=seniority,
-            focus_areas=focus_areas or [],
-            total_questions=total_questions
-        )
+        # Generate first question if requested
+        if generate_first_question:
+            first_question = interviewer_agent.generate_first_question(initial_state)
+            initial_state.questions.append(first_question)
+            initial_state.current_question_id = first_question.question_id
 
         return initial_state
 
@@ -258,6 +231,35 @@ class InterviewWorkflow:
         # Generate feedback
         state = generate_feedback_node(state)
 
+        return state
+
+    def add_streamed_question(
+        self,
+        state: InterviewState,
+        question_text: str,
+        question_id: int,
+        category: str
+    ) -> InterviewState:
+        """
+        Add a question that was streamed to the state.
+
+        Args:
+            state: Current interview state
+            question_text: The full text of the streamed question
+            question_id: The ID of the question
+            category: The category of the question
+
+        Returns:
+            Updated state with the question added
+        """
+        question = Question(
+            question_id=question_id,
+            question_text=question_text.strip(),
+            category=category,
+            timestamp=datetime.utcnow()
+        )
+        state.questions.append(question)
+        state.current_question_id = question.question_id
         return state
 
 

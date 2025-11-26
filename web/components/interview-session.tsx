@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { VoiceButton, VoiceButtonWithHint } from '@/components/VoiceButton'
 import { useVoiceRecording } from '@/hooks/useVoiceRecording'
-import { synthesizeSpeech, playAudio, stopAudio } from '@/services/audioService'
+import { stopAudio } from '@/services/audioService'
 import { Volume2, Mic, User, ChevronDown, ChevronUp, MessageSquare, Play, Loader2 } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 import type { InterviewSessionResponse, Question, EvaluationScore, StartInterviewRequest } from '@/lib/types'
@@ -38,13 +38,14 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
 
   // Track the currently playing question ID to prevent double-firing/race conditions
   const playingQuestionIdRef = useRef<string | null>(null)
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
 
   // Initialize Interview
   useEffect(() => {
     const initInterview = async () => {
       try {
         setIsInitializing(true)
-        const response = await apiClient.startInterview(interviewData)
+        const response = await apiClient.startInterview(interviewData, useVoiceMode)
         setSessionData(response)
         setCurrentQuestion(response.current_question)
         setQuestionsAnswered(0)
@@ -71,18 +72,76 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
     },
   })
 
-  // Auto-play question using TTS
-  const playQuestion = async (questionText: string, questionId: string) => {
-    // Prevent re-playing the same question if it's already in progress
-    if (playingQuestionIdRef.current === questionId && isPlayingAudio) return
+  // Play audio from base64 data
+  const playAudioFromBase64 = (base64Data: string): Promise<void> => {
+    // Stop any existing audio first
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.currentTime = 0
+      URL.revokeObjectURL(currentAudioRef.current.src)
+      currentAudioRef.current = null
+    }
     
-    playingQuestionIdRef.current = questionId
+    return new Promise((resolve, reject) => {
+      try {
+        // Convert base64 to blob
+        const binaryString = atob(base64Data)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: 'audio/mpeg' })
+        
+        // Create audio element and play
+        const audio = new Audio(URL.createObjectURL(blob))
+        currentAudioRef.current = audio
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audio.src)
+          if (currentAudioRef.current === audio) {
+            currentAudioRef.current = null
+          }
+          resolve()
+        }
+        
+        audio.onerror = (error) => {
+          URL.revokeObjectURL(audio.src)
+          if (currentAudioRef.current === audio) {
+            currentAudioRef.current = null
+          }
+          reject(error)
+        }
+        
+        audio.play().catch((error) => {
+          URL.revokeObjectURL(audio.src)
+          if (currentAudioRef.current === audio) {
+            currentAudioRef.current = null
+          }
+          reject(error)
+        })
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  // Auto-play question using audio_data from question
+  const playQuestion = async (question: Question) => {
+    // Prevent re-playing the same question if it's already in progress
+    if (playingQuestionIdRef.current === question.question_id.toString() && isPlayingAudio) return
+    
+    // Check if question has audio data
+    if (!question.audio_data) {
+      setError('No hay audio disponible para esta pregunta. Por favor, recarga la página.')
+      return
+    }
+    
+    playingQuestionIdRef.current = question.question_id.toString()
 
     try {
       setIsPlayingAudio(true)
       setError(null)
-      const audioBlob = await synthesizeSpeech(questionText)
-      await playAudio(audioBlob)
+      await playAudioFromBase64(question.audio_data)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       
@@ -93,14 +152,10 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
          return
       }
 
-      if (errorMessage.includes('403') || errorMessage.includes('Voice features are disabled')) {
-        setError('Las funciones de voz no están habilitadas. Por favor verifica la configuración del backend.')
-        setUseVoiceMode(false)
-      } else {
-        setError(`No se pudo reproducir el audio: ${errorMessage}`)
-      }
+      setError(`No se pudo reproducir el audio: ${errorMessage}`)
     } finally {
       setIsPlayingAudio(false)
+      playingQuestionIdRef.current = null
     }
   }
 
@@ -108,22 +163,50 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
   useEffect(() => {
     if (!useVoiceMode) {
       stopAudio()
+      // Also stop any audio from base64
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.currentTime = 0
+        URL.revokeObjectURL(currentAudioRef.current.src)
+        currentAudioRef.current = null
+      }
+      setIsPlayingAudio(false)
       setShowTranscript(true)
     }
   }, [useVoiceMode])
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAudio()
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.currentTime = 0
+        URL.revokeObjectURL(currentAudioRef.current.src)
+        currentAudioRef.current = null
+      }
+    }
+  }, [])
+
   // Play question when it changes
   useEffect(() => {
-    if (currentQuestion && useVoiceMode && !isInitializing) {
+    if (currentQuestion && useVoiceMode && !isInitializing && currentQuestion.audio_data) {
       // Reset permission state on new question to be safe, though usually once granted it stays
       setAudioPermissionGranted(true) 
       
       const timer = setTimeout(() => {
-        playQuestion(currentQuestion.question_text, currentQuestion.question_id.toString())
+        playQuestion(currentQuestion)
       }, 500)
       return () => {
         clearTimeout(timer)
         stopAudio()
+        // Also stop any audio from base64
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause()
+          currentAudioRef.current.currentTime = 0
+          URL.revokeObjectURL(currentAudioRef.current.src)
+          currentAudioRef.current = null
+        }
         playingQuestionIdRef.current = null
       }
     }
@@ -139,14 +222,26 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
     if (!sessionData) return
 
     stopAudio() // Stop any playing audio
+    // Also stop any audio from base64
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.currentTime = 0
+      URL.revokeObjectURL(currentAudioRef.current.src)
+      currentAudioRef.current = null
+    }
+    setIsPlayingAudio(false)
     setIsProcessing(true)
     setError(null)
     setShowEvaluation(false)
 
     try {
-      const response = await apiClient.submitAnswer(sessionData.session_id, {
-        answer: currentAnswer,
-      })
+      const response = await apiClient.submitAnswer(
+        sessionData.session_id,
+        {
+          answer: currentAnswer,
+        },
+        useVoiceMode
+      )
 
       setLastEvaluation(response.evaluation)
       setShowEvaluation(true)
@@ -185,8 +280,26 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
         
         if (voiceRecording.isRecording) {
           voiceRecording.stopRecording();
+          // Auto-submit after stopping recording with spacebar
+          if (useVoiceMode) {
+            setTimeout(() => {
+              if (currentAnswer.trim().length >= 10) {
+                handleNext();
+              } else {
+                setError('Por favor proporciona una respuesta de al menos 10 caracteres.');
+              }
+            }, 100);
+          }
         } else {
           stopAudio(); // Stop TTS if playing
+          // Also stop any audio from base64
+          if (currentAudioRef.current) {
+            currentAudioRef.current.pause()
+            currentAudioRef.current.currentTime = 0
+            URL.revokeObjectURL(currentAudioRef.current.src)
+            currentAudioRef.current = null
+          }
+          setIsPlayingAudio(false)
           if (useVoiceMode) {
             voiceRecording.startRecording();
           }
@@ -196,7 +309,7 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [voiceRecording, isProcessing, useVoiceMode, isInitializing]);
+  }, [voiceRecording, isProcessing, useVoiceMode, isInitializing, currentAnswer]);
 
   if (isInitializing) {
     return (
@@ -267,7 +380,7 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
             
             {/* Interviewer Avatar & Visualizer */}
             <div className="flex flex-col items-center justify-center gap-6 py-4">
-              <div className="relative group cursor-pointer" onClick={() => useVoiceMode && playQuestion(currentQuestion.question_text, currentQuestion.question_id.toString())}>
+              <div className="relative group cursor-pointer" onClick={() => useVoiceMode && currentQuestion.audio_data && playQuestion(currentQuestion)}>
                 <Avatar className={cn(
                   "h-32 w-32 border-4 transition-all duration-300",
                   isPlayingAudio ? "border-primary shadow-[0_0_30px_rgba(var(--primary),0.3)] scale-105" : "border-muted group-hover:border-primary/50"
@@ -332,9 +445,26 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
                         hasError={voiceRecording.hasError}
                         onStart={() => {
                             stopAudio();
+                            // Also stop any audio from base64
+                            if (currentAudioRef.current) {
+                              currentAudioRef.current.pause()
+                              currentAudioRef.current.currentTime = 0
+                              URL.revokeObjectURL(currentAudioRef.current.src)
+                              currentAudioRef.current = null
+                            }
+                            setIsPlayingAudio(false)
                             voiceRecording.startRecording();
                         }}
                         onStop={voiceRecording.stopRecording}
+                        onStopAndSubmit={() => {
+                            // Auto-submit after stopping recording
+                            if (currentAnswer.trim().length >= 10) {
+                                handleNext();
+                            } else {
+                                setError('Por favor proporciona una respuesta de al menos 10 caracteres.');
+                            }
+                        }}
+                        supportPressAndHold={true}
                         disabled={isProcessing}
                         className="h-20 w-20"
                     />
@@ -344,8 +474,8 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
                         size="icon"
                         variant="ghost"
                         className="absolute -right-16 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full h-10 w-10"
-                        onClick={() => playQuestion(currentQuestion.question_text, currentQuestion.question_id.toString())}
-                        disabled={isPlayingAudio || isProcessing}
+                        onClick={() => currentQuestion.audio_data && playQuestion(currentQuestion)}
+                        disabled={isPlayingAudio || isProcessing || !currentQuestion.audio_data}
                         title="Repetir pregunta"
                         >
                         <Volume2 className={cn("w-5 h-5", isPlayingAudio && "animate-pulse text-primary")} />
@@ -412,18 +542,20 @@ export function InterviewSession({ interviewData, onComplete }: InterviewSession
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleNext}
-                disabled={!currentAnswer.trim() || currentAnswer.length < 10 || isProcessing}
-                className="w-full py-6 text-lg font-medium shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all"
-                size="lg"
-              >
-                {isProcessing ? 'Evaluando...' : 
-                 questionsAnswered === sessionData.total_questions - 1 ? 'Completar Entrevista' : 'Enviar Respuesta'}
-              </Button>
-            </div>
+            {/* Action Buttons - Only show in text mode or when transcript is visible */}
+            {(!useVoiceMode || showTranscript) && (
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleNext}
+                  disabled={!currentAnswer.trim() || currentAnswer.length < 10 || isProcessing}
+                  className="w-full py-6 text-lg font-medium shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all"
+                  size="lg"
+                >
+                  {isProcessing ? 'Evaluando...' : 
+                   questionsAnswered === sessionData.total_questions - 1 ? 'Completar Entrevista' : 'Enviar Respuesta'}
+                </Button>
+              </div>
+            )}
 
           </CardContent>
         </Card>

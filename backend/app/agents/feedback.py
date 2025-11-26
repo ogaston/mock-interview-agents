@@ -4,6 +4,7 @@ Feedback Agent - Generates personalized feedback and recommendations using LLM.
 from app.config import settings
 from app.models.schemas import InterviewState, InterviewFeedback, FeedbackItem, AnswerEvaluation
 
+from app.mocks.agents import MockFeedbackAgent 
 
 class FeedbackAgent:
     """Agent responsible for generating personalized feedback."""
@@ -16,7 +17,11 @@ class FeedbackAgent:
         """Initialize the appropriate LLM based on configuration."""
         config = settings.get_llm_config()
 
-        if config["provider"] == "openai":
+        if config["provider"] == "mock":
+            mock_feedback_agent = MockFeedbackAgent()
+            return mock_feedback_agent._initialize_llm()
+            
+        elif config["provider"] == "openai":
             from langchain_openai import ChatOpenAI
             return ChatOpenAI(
                 model=config["model"],
