@@ -1,6 +1,6 @@
 from typing import Iterator, AsyncIterator
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
+from langchain_core.messages import BaseMessage, AIMessage, HumanMessage, AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.callbacks import CallbackManagerForLLMRun, AsyncCallbackManagerForLLMRun
 
@@ -94,16 +94,34 @@ class MockChatModel(BaseChatModel):
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs,
-    ) -> Iterator[AIMessage]:
+    ) -> Iterator[AIMessageChunk]:
         # Get the next response in rotation
         response_text = self.responses[self._current_index % len(self.responses)]
         self._current_index += 1
         
         # Stream the response word by word to simulate real streaming
+        # Use AIMessageChunk for streaming chunks
         words = response_text.split()
         for i, word in enumerate(words):
             content = word if i == 0 else f" {word}"
-            yield AIMessage(content=content)
+            yield AIMessageChunk(content=content)
+    
+    async def astream(self, input, config=None, **kwargs):
+        """
+        Override astream to handle both string and message list inputs.
+        Ensures compatibility with LangChain's astream wrapper.
+        """
+        # Convert string to HumanMessage if needed
+        if isinstance(input, str):
+            messages = [HumanMessage(content=input)]
+        elif isinstance(input, list):
+            messages = input
+        else:
+            messages = [input]
+        
+        # Call _astream and yield chunks directly (bypassing base class wrapper)
+        async for chunk in self._astream(messages, **kwargs):
+            yield chunk
     
     async def _astream(
         self,
@@ -111,16 +129,17 @@ class MockChatModel(BaseChatModel):
         stop: list[str] | None = None,
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs,
-    ) -> AsyncIterator[AIMessage]:
+    ) -> AsyncIterator[AIMessageChunk]:
         # Get the next response in rotation
         response_text = self.responses[self._current_index % len(self.responses)]
         self._current_index += 1
         
         # Stream the response word by word to simulate real streaming
+        # Use AIMessageChunk for streaming chunks
         words = response_text.split()
         for i, word in enumerate(words):
             content = word if i == 0 else f" {word}"
-            yield AIMessage(content=content)
+            yield AIMessageChunk(content=content)
 
 
 class MockInterviewerAgent:

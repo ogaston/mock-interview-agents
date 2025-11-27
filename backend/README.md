@@ -47,7 +47,7 @@ This backend provides a comprehensive mock interview platform that uses multi-ag
 
 2. **Download spaCy language model**:
    ```bash
-   python -m spacy download en_core_web_sm
+   python -m spacy download es_core_news_sm
    ```
 
 3. **Configure environment**:
@@ -74,6 +74,61 @@ The API will be available at http://localhost:8000.
 - **Confidence** (0-10): Based on confidence indicators and response length
 - **Relevance** (0-10): Based on technical depth and vocabulary complexity
 - **Overall Score** (0-10): Weighted average (30% clarity + 30% confidence + 40% relevance)
+
+### Fuzzy Logic Rules
+
+The evaluation system uses fuzzy inference with three rule sets. All inputs are normalized to a 0-10 scale.
+
+#### Input Variables
+
+| Variable | Low | Medium | High |
+|----------|-----|--------|------|
+| **Word Count** | 0-4 | 3-7 | 6-10 |
+| **Coherence** | 0-4 | 3-7 | 6-10 |
+| **Confidence Level** | 0-4 | 3-7 | 6-10 |
+| **Technical Depth** | 0-4 | 3-7 | 6-10 |
+| **Filler Ratio** | 0-3 (good) | 2-8 | 7-10 (bad) |
+| **Complexity** | 0-4 | 3-7 | 6-10 |
+
+#### Clarity Rules
+
+| Coherence | Filler Ratio | Output Score |
+|-----------|--------------|--------------|
+| High | Low | Excellent |
+| High | Medium | Good |
+| Medium | Low | Good |
+| Medium | Medium | Fair |
+| Low | *any* | Poor |
+| *any* | High | Poor |
+
+#### Confidence Rules
+
+| Confidence Level | Word Count | Output Score |
+|------------------|------------|--------------|
+| High | High | Excellent |
+| High | Medium | Good |
+| Medium | Medium | Good |
+| Medium | Low | Fair |
+| Low | *any* | Poor |
+
+#### Relevance Rules
+
+| Technical Depth | Complexity | Output Score |
+|-----------------|------------|--------------|
+| High | High | Excellent |
+| High | Medium | Good |
+| Medium | Medium | Good |
+| Medium | Low | Fair |
+| Low | *any* | Poor |
+
+#### Output Score Levels
+
+| Level | Score Range |
+|-------|-------------|
+| Poor | 0-3 |
+| Fair | 2-6 |
+| Good | 5-9 |
+| Excellent | 8-10 |
 
 ## License
 

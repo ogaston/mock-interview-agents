@@ -14,20 +14,24 @@ class NLPService:
         """Initialize the NLP service. Lazy-loads spaCy model when needed."""
         self._nlp = None
         self.filler_words = {
-            "um", "uh", "like", "you know", "i mean", "sort of", "kind of",
-            "basically", "actually", "literally", "so", "well", "hmm", "err"
+            "eh", "este", "o sea", "digamos", "bueno", "tipo", "sabes",
+            "entonces", "mhm", "pues", "básicamente", "literalmente", "así que", "umm", "uh"
         }
         self.confidence_indicators = {
-            "definitely", "certainly", "clearly", "obviously", "precisely",
-            "exactly", "absolutely", "confident", "sure", "positive",
-            "undoubtedly", "without a doubt", "believe", "think", "know"
+            "definitivamente", "ciertamente", "claramente", "obviamente",
+            "precisamente", "exactamente", "absolutamente", "seguro",
+            "indudablemente", "sin duda", "creo", "pienso", "sé", "confío", "experiencia"
         }
-        # Common technical terms (can be expanded)
+        # Common technical terms (English terms are common in tech, added Spanish variations)
         self.technical_terms = {
             "algorithm", "complexity", "database", "api", "framework",
             "architecture", "scalability", "optimization", "implementation",
             "design pattern", "microservice", "cache", "queue", "stack",
-            "performance", "latency", "throughput", "distributed", "concurrent"
+            "performance", "latency", "throughput", "distributed", "concurrent",
+            "algoritmo", "complejidad", "base de datos", "arquitectura",
+            "escalabilidad", "optimización", "implementación", "patrón de diseño",
+            "microservicio", "cola", "pila", "rendimiento", "latencia",
+            "concurrente", "distribuido"
         }
 
     @property
@@ -36,13 +40,13 @@ class NLPService:
         if self._nlp is None:
             try:
                 import spacy
-                # Try to load English model, fallback to blank if not available
+                # Try to load Spanish model, fallback to blank if not available
                 try:
-                    self._nlp = spacy.load("en_core_web_sm")
+                    self._nlp = spacy.load("es_core_news_sm")
                 except OSError:
-                    print("Warning: spaCy model 'en_core_web_sm' not found. Using blank model.")
-                    print("Install with: python -m spacy download en_core_web_sm")
-                    self._nlp = spacy.blank("en")
+                    print("Warning: spaCy model 'es_core_news_sm' not found. Using blank model.")
+                    print("Install with: python -m spacy download es_core_news_sm")
+                    self._nlp = spacy.blank("es")
             except ImportError:
                 raise ImportError("spaCy is not installed. Install with: pip install spacy")
         return self._nlp
@@ -106,12 +110,14 @@ class NLPService:
         This is a simple implementation; for production, consider using transformers.
         """
         positive_words = {
-            "good", "great", "excellent", "positive", "success", "achieve",
-            "improve", "effective", "efficient", "strong", "confident", "capable"
+            "bien", "excelente", "gran", "positivo", "éxito", "lograr",
+            "mejorar", "efectivo", "eficiente", "fuerte", "confiado", "capaz",
+            "bueno", "genial", "increíble", "solución", "resolver"
         }
         negative_words = {
-            "bad", "poor", "fail", "difficult", "problem", "issue", "struggle",
-            "weak", "unable", "cannot", "never", "impossible", "confused"
+            "mal", "pobre", "fallar", "difícil", "problema", "asunto", "lucha",
+            "débil", "incapaz", "no puedo", "nunca", "imposible", "confundido",
+            "error", "malo", "complicado"
         }
 
         pos_count = sum(1 for word in positive_words if word in text)
@@ -184,37 +190,37 @@ class NLPService:
 
         # Word count interpretation
         if features.word_count < 50:
-            summary["length"] = "very brief"
+            summary["length"] = "muy breve"
         elif features.word_count < 100:
-            summary["length"] = "brief"
+            summary["length"] = "breve"
         elif features.word_count < 200:
-            summary["length"] = "moderate"
+            summary["length"] = "moderada"
         else:
-            summary["length"] = "detailed"
+            summary["length"] = "detallada"
 
         # Sentiment interpretation
         if features.sentiment_score > 0.3:
-            summary["tone"] = "positive"
+            summary["tone"] = "positivo"
         elif features.sentiment_score < -0.3:
-            summary["tone"] = "negative"
+            summary["tone"] = "negativo"
         else:
             summary["tone"] = "neutral"
 
         # Coherence interpretation
         if features.coherence_score > 0.7:
-            summary["coherence"] = "highly coherent"
+            summary["coherence"] = "muy coherente"
         elif features.coherence_score > 0.4:
-            summary["coherence"] = "moderately coherent"
+            summary["coherence"] = "moderadamente coherente"
         else:
-            summary["coherence"] = "needs better structure"
+            summary["coherence"] = "necesita mejor estructura"
 
         # Complexity interpretation
         if features.complexity_score > 0.7:
-            summary["complexity"] = "sophisticated vocabulary"
+            summary["complexity"] = "vocabulario sofisticado"
         elif features.complexity_score > 0.4:
-            summary["complexity"] = "moderate complexity"
+            summary["complexity"] = "complejidad moderada"
         else:
-            summary["complexity"] = "simple language"
+            summary["complexity"] = "lenguaje simple"
 
         return summary
 

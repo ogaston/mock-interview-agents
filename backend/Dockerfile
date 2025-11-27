@@ -20,7 +20,7 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt && \
-    python -m spacy download en_core_web_sm && \
+    python -m spacy download es_core_news_sm && \
     apt-get purge -y --auto-remove build-essential
 
 # Copy the application code
